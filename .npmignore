@@ -1,0 +1,7 @@
+/src
+/test
+/mock
+/.coffeelintignore
+/coffeelint.json
+/coverage.html
+/integration.sh

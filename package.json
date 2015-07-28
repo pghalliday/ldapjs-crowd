@@ -1,0 +1,52 @@
+{
+  "name": "ldapjs-crowd",
+  "version": "1.0.0",
+  "description": "ldapjs middleware to use an Atlassian Crowd backend",
+  "main": "lib/index.js",
+  "scripts": {
+    "lint": "coffeelint -f coffeelint.json .",
+    "precoverage": "npm run lint",
+    "coverage": "multi='spec=- html-cov=coverage.html mocha-cov-reporter=-' mocha --recursive --compilers coffee:coffee-script/register --require coffee-coverage/register -R mocha-multi",
+    "prebuild": "npm run coverage",
+    "build": "coffee --compile --output lib/ src/",
+    "integration": "./integration.sh ldapjs-crowd",
+    "test": "npm run integration",
+    "prepublish": "npm run build"
+  },
+  "config": {
+    "mocha-cov-reporter": {
+      "failOnError": true,
+      "threshold": 100,
+      "useColors": true
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pghalliday/ldapjs-crowd.git"
+  },
+  "keywords": [
+    "LDAP",
+    "Crowd",
+    "Authentication"
+  ],
+  "author": "Peter Halliday",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/pghalliday/ldapjs-crowd/issues"
+  },
+  "homepage": "https://github.com/pghalliday/ldapjs-crowd#readme",
+  "devDependencies": {
+    "chai": "^3.2.0",
+    "coffee-coverage": "^0.4.4",
+    "coffee-script": "^1.8.0",
+    "coffeelint": "^1.8.1",
+    "ldapjs": "^0.7.1",
+    "mocha": "^2.1.0",
+    "mocha-cov-reporter": "^1.1.3",
+    "mocha-multi": "^0.6.0",
+    "q": "^1.4.1"
+  },
+  "dependencies": {
+    "atlassian-crowd-client": "^1.1.1"
+  }
+}
