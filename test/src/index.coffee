@@ -1,6 +1,8 @@
 Q = require 'q'
 chai = require 'chai'
+chaiAsPromised = require 'chai-as-promised'
 chai.should()
+chai.use chaiAsPromised
 
 ldapjsCrowd = require '../../src/'
 ldapjs = require 'ldapjs'
@@ -15,15 +17,27 @@ APPLICATION_PASSWORD = 'password'
 
 LDAP_PORT = 4000
 LDAP_URL = 'ldap://localhost:' + LDAP_PORT
+SUFFIX = 'o=example'
+UID = 'uid'
+BIND_DN = 'cn=root'
+PASSWORD = 'password'
+BASE = 'ou=crowd'
 
 SUFFIX = 'o=example'
 
 describe 'ldapjs-crowd', ->
   server = ldapjs.createServer()
   backend = ldapjsCrowd.createBackend
-    crowdUrl: CROWD_URL
-    applicationName: APPLICATION_NAME
-    applicationPassword: APPLICATION_PASSWORD
+    crowd:
+      url: CROWD_URL
+      applicationName: APPLICATION_NAME
+      applicationPassword: APPLICATION_PASSWORD
+    ldap:
+      uid: UID
+      dnSuffix: SUFFIX
+      bindDn: BIND_DN
+      bindPassword: PASSWORD
+      searchBase: BASE
   server.add SUFFIX, backend.add
   server.modify SUFFIX, backend.modify
   server.modifyDN SUFFIX, backend.modifyDN
@@ -47,64 +61,58 @@ describe 'ldapjs-crowd', ->
       .then ->
         crowd.close()
 
-  it 'should support bind', ->
-    client = gitlab.createClient LDAP_URL
-    Q()
-      .then ->
-        client.bind 'cn=john, ' + SUFFIX, 'secret'
-      .then ->
-        client.unbind()
+  describe 'routes', ->
+    client = undefined
 
-  it 'should support add', ->
-    client = gitlab.createClient LDAP_URL
-    Q()
-      .then ->
-        client.add SUFFIX,
-          cn: 'foo'
-      .then ->
-        client.unbind()
+    beforeEach ->
+      client = ldapjs.createClient
+        url: LDAP_URL
 
-  it 'should support modify', ->
-    client = gitlab.createClient LDAP_URL
-    Q()
-      .then ->
-        client.modify SUFFIX,
-          operation: 'add'
-          modification:
-            pets: ['cat', 'dog']
-      .then ->
-        client.unbind()
+    afterEach ->
+      Q.ninvoke client, 'unbind'
 
-  it 'should support modifyDN', ->
-    client = gitlab.createClient LDAP_URL
-    Q()
-      .then ->
-        client.modifyDN 'cn=foo, ' + SUFFIX, 'cn=bar'
-      .then ->
-        client.unbind()
+    it 'should support bind', ->
+      Q()
+        .then ->
+          Q.ninvoke client, 'bind', 'cn=john, ' + SUFFIX, 'secret'
 
-  it 'should support compare', ->
-    client = gitlab.createClient LDAP_URL
-    Q()
-      .then ->
-        client.compare 'cn=foo, ' + SUFFIX, 'sn', 'bar'
-      .then ->
-        client.unbind()
+    it 'should support search', ->
+      Q()
+        .then ->
+          Q.ninvoke client, 'search', SUFFIX,
+            filter: '(&(l=Seattle)(email=*@foo.com))'
+            scope: 'sub'
 
-  it 'should support del', ->
-    client = gitlab.createClient LDAP_URL
-    Q()
-      .then ->
-        client.del 'cn=foo, ' + SUFFIX
-      .then ->
-        client.unbind()
+    it 'should not support add', ->
+      Q()
+        .then ->
+          Q.ninvoke client, 'add', SUFFIX,
+            cn: 'foo'
+        .should.be.rejectedWith(/not implemented/)
 
-  it 'should support search', ->
-    client = gitlab.createClient LDAP_URL
-    Q()
-      .then ->
-        client.search SUFFIX,
-          filter: '(&(l=Seattle)(email=*@foo.com))'
-          scope: 'sub'
-      .then ->
-        client.unbind()
+    it 'should not support modify', ->
+      Q()
+        .then ->
+          Q.ninvoke client, 'modify', SUFFIX,
+            operation: 'add'
+            modification:
+              pets: ['cat', 'dog']
+        .should.be.rejectedWith(/not implemented/)
+
+    it 'should not support modifyDN', ->
+      Q()
+        .then ->
+          Q.ninvoke client, 'modifyDN', 'cn=foo, ' + SUFFIX, 'cn=bar'
+        .should.be.rejectedWith(/not implemented/)
+
+    it 'should not support compare', ->
+      Q()
+        .then ->
+          Q.ninvoke client, 'compare', 'cn=foo, ' + SUFFIX, 'sn', 'bar'
+        .should.be.rejectedWith(/not implemented/)
+
+    it 'should not support del', ->
+      Q()
+        .then ->
+          Q.ninvoke client, 'del', 'cn=foo, ' + SUFFIX
+        .should.be.rejectedWith(/not implemented/)
