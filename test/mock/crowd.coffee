@@ -42,6 +42,14 @@ INACTIVE_USER_OBJECT['last-name'] = INACTIVE_USER_LAST_NAME
 INACTIVE_USER_OBJECT['display-name'] = INACTIVE_USER_DISPLAY_NAME
 INACTIVE_USER_OBJECT.email = INACTIVE_USER_EMAIL
 
+INACTIVE_USER_ERROR =
+  reason: 'INACTIVE_ACCOUNT'
+  message: 'Account is inactive'
+
+INVALID_CREDENTIALS_ERROR =
+  reason: 'INVALID_USER_AUTHENTICATION'
+  message: 'Username or password is invalid'
+
 describe 'crowd', ->
   server = undefined
   request = undefined
@@ -131,4 +139,96 @@ describe 'crowd', ->
               deferred.reject err
             else
               deferred.resolve()
+        deferred.promise.should.be.fulfilled
+
+    describe '#failOnUser', ->
+      it 'should force a user query to 404 after offset queries', ->
+        server.failOnUser 1
+        Q()
+          .then ->
+            deferred = Q.defer()
+            request
+              .get('/crowd/rest/usermanagement/1/user')
+              .auth(APPLICATION_NAME, APPLICATION_PASSWORD)
+              .query
+                username: USER_NAME
+              .expect(200)
+              .expect('Content-Type', 'application/json')
+              .end (err, res) ->
+                if err
+                  deferred.reject err
+                else
+                  deferred.resolve res.body
+            deferred.promise.should.eventually.become(USER_OBJECT)
+          .then ->
+            deferred = Q.defer()
+            request
+              .get('/crowd/rest/usermanagement/1/user')
+              .auth(APPLICATION_NAME, APPLICATION_PASSWORD)
+              .query
+                username: USER_NAME
+              .expect(404)
+              .end (err, res) ->
+                if err
+                  deferred.reject err
+                else
+                  deferred.resolve res.body
+            deferred.promise.should.be.fulfilled
+
+
+  describe 'POST /crowd/rest/usermanagement/1/authentication', ->
+    describe 'with a valid user and password', ->
+      it 'should return the user', ->
+        deferred = Q.defer()
+        request
+          .post('/crowd/rest/usermanagement/1/authentication')
+          .auth(APPLICATION_NAME, APPLICATION_PASSWORD)
+          .query
+            username: USER_NAME
+          .send
+            value: USER_PASSWORD
+          .expect(200)
+          .expect('Content-Type', 'application/json')
+          .end (err, res) ->
+            if err
+              deferred.reject err
+            else
+              deferred.resolve res.body
+        deferred.promise.should.eventually.become USER_OBJECT
+
+    describe 'with an inactive user', ->
+      it 'should return an inactive user error', ->
+        deferred = Q.defer()
+        request
+          .post('/crowd/rest/usermanagement/1/authentication')
+          .auth(APPLICATION_NAME, APPLICATION_PASSWORD)
+          .query
+            username: INACTIVE_USER_NAME
+          .send
+            value: USER_PASSWORD
+          .expect(200)
+          .expect('Content-Type', 'application/json')
+          .end (err, res) ->
+            if err
+              deferred.reject err
+            else
+              deferred.resolve res.body
+        deferred.promise.should.eventually.become INACTIVE_USER_ERROR
+
+    describe 'with an unknown user', ->
+      it 'should return a 404', ->
+        deferred = Q.defer()
+        request
+          .post('/crowd/rest/usermanagement/1/authentication')
+          .auth(APPLICATION_NAME, APPLICATION_PASSWORD)
+          .query
+            username: INCORRECT_USER_NAME
+          .send
+            value: USER_PASSWORD
+          .expect(404)
+          .end (err, res) ->
+            if err
+              deferred.reject err
+            else
+              deferred.resolve res.body
         deferred.promise.should.be.fulfilled

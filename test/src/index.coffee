@@ -218,3 +218,28 @@ describe 'ldapjs-crowd', ->
         username: INACTIVE_USER_NAME
         password: USER_PASSWORD
       .should.be.rejectedWith /first search found no match/
+
+    it 'should fail on the second bind if the password is incorrect', ->
+      client = gitlab.createClient
+        url: LDAP_URL
+        uid: UID
+        bindDn: BIND_DN + ',' + SUFFIX
+        password: PASSWORD
+        base: BASE + ',' + SUFFIX
+      client.authenticate
+        username: USER_NAME
+        password: INCORRECT_USER_PASSWORD
+      .should.be.rejectedWith /second bind failed/
+
+    it 'should fail on the second search if an error is encountered', ->
+      crowdServer.failOnUser 1
+      client = gitlab.createClient
+        url: LDAP_URL
+        uid: UID
+        bindDn: BIND_DN + ',' + SUFFIX
+        password: PASSWORD
+        base: BASE + ',' + SUFFIX
+      client.authenticate
+        username: USER_NAME
+        password: USER_PASSWORD
+      .should.be.rejectedWith /second search found no match/

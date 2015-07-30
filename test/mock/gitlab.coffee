@@ -125,3 +125,12 @@ describe 'gitlab', ->
         username: 'test'
         password: 'secret'
       .should.be.rejectedWith /second search failed/
+
+    # coffeelint: disable=max_line_length
+    it 'should throw an error if no match is returned from the second search', ->
+    # coffeelint: enable=max_line_length
+      server.noMatchOnSearch 1
+      client.authenticate
+        username: 'test'
+        password: 'secret'
+      .should.be.rejectedWith /second search found no match/

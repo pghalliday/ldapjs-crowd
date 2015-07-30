@@ -66,8 +66,14 @@ class Gitlab
           filter: '(objectclass=*)'
         )
       .then (res) ->
+        matches = []
         deferred = Q.defer()
-        res.on 'end', deferred.resolve
+        res.on 'searchEntry', matches.push.bind matches
+        res.on 'end', ->
+          if matches.length
+            deferred.resolve()
+          else
+            deferred.reject 'no matches'
         res.on 'error', deferred.reject
         deferred.promise
       .catch (error) ->
@@ -84,7 +90,10 @@ class Gitlab
           when AUTHENTICATION_STAGES.THIRD_BIND
             throw new Error 'third bind failed'
           when AUTHENTICATION_STAGES.SECOND_SEARCH
-            throw new Error 'second search failed'
+            if error is 'no matches'
+              throw new Error 'second search found no match'
+            else
+              throw new Error 'second search failed'
       .finally =>
         Q.ninvoke @client, 'unbind'
 
