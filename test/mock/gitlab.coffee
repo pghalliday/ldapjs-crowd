@@ -83,3 +83,45 @@ describe 'gitlab', ->
             filter: '(objectclass=*)'
             attributes: ''
         ]
+
+    it 'should throw an error if the first bind fails', ->
+      server.failOnBind 0
+      client.authenticate
+        username: 'test'
+        password: 'secret'
+      .should.be.rejectedWith /first bind failed/
+
+    it 'should throw an error if the first search fails', ->
+      server.failOnSearch 0
+      client.authenticate
+        username: 'test'
+        password: 'secret'
+      .should.be.rejectedWith /first search failed/
+
+    it 'should throw an error if no match is returned from the first search', ->
+      server.noMatchOnSearch 0
+      client.authenticate
+        username: 'test'
+        password: 'secret'
+      .should.be.rejectedWith /first search found no match/
+
+    it 'should throw an error if the second bind fails', ->
+      server.failOnBind 1
+      client.authenticate
+        username: 'test'
+        password: 'secret'
+      .should.be.rejectedWith /second bind failed/
+
+    it 'should throw an error if the third bind fails', ->
+      server.failOnBind 2
+      client.authenticate
+        username: 'test'
+        password: 'secret'
+      .should.be.rejectedWith /third bind failed/
+
+    it 'should throw an error if the second search fails', ->
+      server.failOnSearch 1
+      client.authenticate
+        username: 'test'
+        password: 'secret'
+      .should.be.rejectedWith /second search failed/
