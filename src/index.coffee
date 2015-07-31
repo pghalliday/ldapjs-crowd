@@ -16,12 +16,13 @@ class CrowdBackend
 
   createSearchEntry: (user) =>
     attributes = Object.create null
-    attributes[@params.ldap.uid] = user.name
+    attributes[@params.ldap.uid] = user.username
     attributes.givenName = user.firstname
     attributes.sn = user.lastname
     attributes.displayName = user.displayname
     attributes.mail = user.email
-    dn: @params.ldap.uid + '=' + user.name + ',' + @searchBase
+    attributes.objectclass = 'crowdUser'
+    dn: @params.ldap.uid + '=' + user.username + ',' + @searchBase
     attributes: attributes
 
   authorize: (req, red, next) =>
