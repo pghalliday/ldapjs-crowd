@@ -51,7 +51,7 @@
   },
   "dependencies": {
     "q": "^1.4.1",
-    "ldapjs": "^0.7.1",
-    "atlassian-crowd-client": "git+https://github.com/pghalliday/atlassian-crowd-client.git"
+    "ldapjs": "^1.0.0",
+    "atlassian-crowd-client": "^1.2.0"
   }
 }

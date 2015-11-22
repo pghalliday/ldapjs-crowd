@@ -9,9 +9,9 @@ LDAP_PORT = 4000
 LDAP_URL = 'ldap://localhost:' + LDAP_PORT
 SUFFIX = 'o=example'
 UID = 'uid'
-BIND_DN = 'cn=root,' + SUFFIX
+BIND_DN = 'cn=root, ' + SUFFIX
 PASSWORD = 'password'
-BASE = 'ou=crowd,' + SUFFIX
+BASE = 'ou=crowd, ' + SUFFIX
 
 describe 'gitlab', ->
   server = undefined
@@ -61,7 +61,7 @@ describe 'gitlab', ->
           route: 'bind'
           request:
             version: 3
-            name: 'uid=test,' + BASE
+            name: 'uid=test, ' + BASE
             authentication: 'simple'
             credentials: 'secret'
         ,
@@ -74,7 +74,7 @@ describe 'gitlab', ->
         ,
           route: 'search'
           request:
-            baseObject: 'uid=test,' + BASE
+            baseObject: 'uid=test, ' + BASE
             scope: 'base'
             derefAliases: 0
             sizeLimit: 0

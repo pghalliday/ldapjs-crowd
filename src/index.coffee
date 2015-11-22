@@ -47,10 +47,10 @@ class CrowdBackend
     else if req.dn.childOf @searchBase
       rdns = req.dn.rdns
       return next new ldapjs.InvalidCredentialsError() if rdns.length isnt 3
-      first = rdns[0]
+      first = rdns[0].attrs
       uid = @params.ldap.uid
       return next new ldapjs.InvalidCredentialsError() if not first[uid]
-      username = first[uid]
+      username = first[uid].value
       promised = true
       Q(@crowd.authentication.authenticate(username, req.credentials))
         .then ->
@@ -85,10 +85,10 @@ class CrowdBackend
     else if req.dn.childOf @searchBase
       rdns = req.dn.rdns
       if rdns.length is 3
-        first = rdns[0]
+        first = rdns[0].attrs
         uid = @params.ldap.uid
         if first[uid]
-          username = first[uid]
+          username = first[uid].value
           if req.scope = 'base'
             promised = true
             Q(@crowd.user.get(username))
