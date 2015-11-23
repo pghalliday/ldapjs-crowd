@@ -9,6 +9,7 @@ ldapjs = require 'ldapjs'
 
 crowd = require '../../mock/crowd'
 gitlab = require '../../mock/gitlab'
+apache = require '../../mock/apache'
 
 CROWD_PORT = 3000
 CROWD_URL = 'http://localhost:' + CROWD_PORT + '/crowd/'
@@ -239,6 +240,146 @@ describe 'ldapjs-crowd', ->
         bindDn: BIND_DN + ',' + SUFFIX
         password: PASSWORD
         base: BASE + ',' + SUFFIX
+      client.authenticate
+        username: USER_NAME
+        password: USER_PASSWORD
+      .should.be.rejectedWith /second search found no match/
+
+  describe 'with apache client', ->
+    it 'should authenticate a valid user', ->
+      client = apache.createClient
+        url: LDAP_URL
+        uid: UID
+        bindDn: BIND_DN + ',' + SUFFIX
+        password: PASSWORD
+        base: BASE + ',' + SUFFIX
+        filter: '(objectclass=*)'
+      client.authenticate
+        username: USER_NAME
+        password: USER_PASSWORD
+      .should.be.fulfilled
+
+    it 'should fail on the first bind if the bindDn is incorrect', ->
+      client = apache.createClient
+        url: LDAP_URL
+        uid: UID
+        bindDn: INCORRECT_BIND_DN + ',' + SUFFIX
+        password: PASSWORD
+        base: BASE + ',' + SUFFIX
+        filter: '(objectclass=*)'
+      client.authenticate
+        username: USER_NAME
+        password: USER_PASSWORD
+      .should.be.rejectedWith /first bind failed/
+
+    it 'should fail on the first bind if the password is incorrect', ->
+      client = apache.createClient
+        url: LDAP_URL
+        uid: UID
+        bindDn: BIND_DN + ',' + SUFFIX
+        password: INCORRECT_PASSWORD
+        base: BASE + ',' + SUFFIX
+        filter: '(objectclass=*)'
+      client.authenticate
+        username: USER_NAME
+        password: USER_PASSWORD
+      .should.be.rejectedWith /first bind failed/
+
+    it 'should fail on the first search if the base is incorrect', ->
+      client = apache.createClient
+        url: LDAP_URL
+        uid: UID
+        bindDn: BIND_DN + ',' + SUFFIX
+        password: PASSWORD
+        base: INCORRECT_BASE + ',' + SUFFIX
+        filter: '(objectclass=*)'
+      client.authenticate
+        username: USER_NAME
+        password: USER_PASSWORD
+      .should.be.rejectedWith /first search failed/
+
+    # coffeelint: disable=max_line_length
+    it 'should fail on the first search with no match found if the uid is incorrect', ->
+    # coffeelint: enable=max_line_length
+      client = apache.createClient
+        url: LDAP_URL
+        uid: INCORRECT_UID
+        bindDn: BIND_DN + ',' + SUFFIX
+        password: PASSWORD
+        base: BASE + ',' + SUFFIX
+        filter: '(objectclass=*)'
+      client.authenticate
+        username: USER_NAME
+        password: USER_PASSWORD
+      .should.be.rejectedWith /first search found no match/
+
+    # coffeelint: disable=max_line_length
+    it 'should fail on the first search with no match if no match is found for the user', ->
+    # coffeelint: enable=max_line_length
+      client = apache.createClient
+        url: LDAP_URL
+        uid: UID
+        bindDn: BIND_DN + ',' + SUFFIX
+        password: PASSWORD
+        base: BASE + ',' + SUFFIX
+        filter: '(objectclass=*)'
+      client.authenticate
+        username: INCORRECT_USER_NAME
+        password: USER_PASSWORD
+      .should.be.rejectedWith /first search found no match/
+
+    # coffeelint: disable=max_line_length
+    it 'should fail on the first search with no match if the user is inactive', ->
+    # coffeelint: enable=max_line_length
+      client = apache.createClient
+        url: LDAP_URL
+        uid: UID
+        bindDn: BIND_DN + ',' + SUFFIX
+        password: PASSWORD
+        base: BASE + ',' + SUFFIX
+        filter: '(objectclass=*)'
+      client.authenticate
+        username: INACTIVE_USER_NAME
+        password: USER_PASSWORD
+      .should.be.rejectedWith /first search found no match/
+
+    # coffeelint: disable=max_line_length
+    it 'should fail on the first search with no match if the user does not match the filter', ->
+    # coffeelint: enable=max_line_length
+      client = apache.createClient
+        url: LDAP_URL
+        uid: UID
+        bindDn: BIND_DN + ',' + SUFFIX
+        password: PASSWORD
+        base: BASE + ',' + SUFFIX
+        filter: '(objectclass=puppy)'
+      client.authenticate
+        username: USER_NAME
+        password: USER_PASSWORD
+      .should.be.rejectedWith /first search found no match/
+
+    it 'should fail on the second bind if the password is incorrect', ->
+      client = apache.createClient
+        url: LDAP_URL
+        uid: UID
+        bindDn: BIND_DN + ',' + SUFFIX
+        password: PASSWORD
+        base: BASE + ',' + SUFFIX
+        filter: '(objectclass=*)'
+      client.authenticate
+        username: USER_NAME
+        password: INCORRECT_USER_PASSWORD
+      .should.be.rejectedWith /second bind failed/
+
+    it 'should fail on the second search if an error is encountered', ->
+      crowdServer.failOnUser 1
+      client = apache.createClient
+        url: LDAP_URL
+        uid: UID
+        bindDn: BIND_DN + ',' + SUFFIX
+        password: PASSWORD
+        base: BASE + ',' + SUFFIX
+        filter: '(objectclass=*)'
       client.authenticate
         username: USER_NAME
         password: USER_PASSWORD

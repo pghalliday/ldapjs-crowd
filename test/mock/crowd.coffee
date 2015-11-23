@@ -28,6 +28,15 @@ USER_OBJECT['last-name'] = USER_LAST_NAME
 USER_OBJECT['display-name'] = USER_DISPLAY_NAME
 USER_OBJECT.email = USER_EMAIL
 
+GROUPS_OBJECT = Object.create null
+GROUPS_OBJECT.groups = [
+  name: 'group1'
+,
+  name: 'group2'
+,
+  name: 'group3'
+]
+
 INACTIVE_USER_NAME = 'jbloggs'
 INACTIVE_USER_FIRST_NAME = 'Joe'
 INACTIVE_USER_LAST_NAME = 'Bloggs'
@@ -175,6 +184,39 @@ describe 'crowd', ->
                   deferred.resolve res.body
             deferred.promise.should.be.fulfilled
 
+  describe 'GET /crowd/rest/usermanagement/1/user/group/direct', ->
+    describe 'with the correct user', ->
+      it 'should return groups for the user', ->
+        deferred = Q.defer()
+        request
+          .get('/crowd/rest/usermanagement/1/user/group/direct')
+          .auth(APPLICATION_NAME, APPLICATION_PASSWORD)
+          .query
+            username: USER_NAME
+          .expect(200)
+          .expect('Content-Type', 'application/json')
+          .end (err, res) ->
+            if err
+              deferred.reject err
+            else
+              deferred.resolve res.body
+        deferred.promise.should.eventually.become GROUPS_OBJECT
+
+    describe 'with an invalid user', ->
+      it 'should return 404', ->
+        deferred = Q.defer()
+        request
+          .get('/crowd/rest/usermanagement/1/user/group/direct')
+          .auth(APPLICATION_NAME, APPLICATION_PASSWORD)
+          .query
+            username: INCORRECT_USER_NAME
+          .expect(404)
+          .end (err, res) ->
+            if err
+              deferred.reject err
+            else
+              deferred.resolve()
+        deferred.promise.should.be.fulfilled
 
   describe 'POST /crowd/rest/usermanagement/1/authentication', ->
     describe 'with a valid user and password', ->

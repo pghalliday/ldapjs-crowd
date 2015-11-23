@@ -14,6 +14,17 @@ createUserObject = (user, active) ->
   object.email = user.email
   object
 
+createGroupsObject = ->
+  object = Object.create null
+  object.groups = [
+    name: 'group1'
+  ,
+    name: 'group2'
+  ,
+    name: 'group3'
+  ]
+  object
+
 class Crowd
   constructor: (@params) ->
     @forceFailOnUser = false
@@ -40,6 +51,15 @@ class Crowd
             .send new Buffer json
         else
           res.status(404).end()
+
+    @app.get '/crowd/rest/usermanagement/1/user/group/direct', (req, res) =>
+      if req.query.username is @params.activeUser.username
+        json = JSON.stringify createGroupsObject()
+        res
+          .set('Content-Type', 'application/json')
+          .send new Buffer json
+      else
+        res.status(404).end()
 
     @app.post '/crowd/rest/usermanagement/1/authentication', (req, res) =>
       if req.query.username is @params.activeUser.username

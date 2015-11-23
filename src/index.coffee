@@ -2,6 +2,22 @@ Q = require 'q'
 ldapjs = require 'ldapjs'
 CrowdClient = require 'atlassian-crowd-client'
 
+getUidFromFilter = (filter, attribute) ->
+  if filter.type is 'equal'
+    if filter.attribute is attribute
+      filter.value
+    else
+      null
+  else if filter.type is 'and'
+    filters = filter.filters
+    uid = null
+    index = 0
+    while uid is null and index < filters.length
+      uid = getUidFromFilter filters[index++], attribute
+    uid
+  else
+    null
+
 class CrowdBackend
   constructor: (@params) ->
     @crowd = new CrowdClient
@@ -15,13 +31,13 @@ class CrowdBackend
       ldapjs.parseDN @params.ldap.searchBase + ',' + @params.ldap.dnSuffix
 
   createSearchEntry: (user) =>
-    attributes = Object.create null
+    attributes = {}
     attributes[@params.ldap.uid] = user.username
     attributes.givenName = user.firstname
     attributes.sn = user.lastname
     attributes.displayName = user.displayname
     attributes.mail = user.email
-    attributes.objectclass = 'crowdUser'
+    attributes.objectclass = 'person'
     dn: @params.ldap.uid + '=' + user.username + ',' + @searchBase
     attributes: attributes
 
@@ -71,13 +87,16 @@ class CrowdBackend
       next()
     .done()
     if req.dn.equals @searchBase
-      if req.scope = 'sub' and req.filter instanceof ldapjs.EqualityFilter
-        if req.filter.attribute is @params.ldap.uid
+      if req.scope = 'sub'
+        uid = getUidFromFilter req.filter, @params.ldap.uid
+        if uid isnt null
           promised = true
-          Q(@crowd.user.get(req.filter.value))
+          Q(@crowd.user.get(uid))
             .then (user) =>
               if user.active
-                res.send @createSearchEntry user
+                entry = @createSearchEntry user
+                if req.filter.matches entry.attributes
+                  res.send entry
               deferred.resolve()
             .catch ->
               deferred.resolve()
